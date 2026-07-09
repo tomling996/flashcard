@@ -1,0 +1,116 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7f6;
+    margin: 0;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+}
+
+button {
+    cursor: pointer;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    background-color: #fff;
+    color: #4CAF50;
+    font-weight: bold;
+}
+
+button:hover { background-color: #e0e0e0; }
+.hidden { display: none !important; }
+
+.controls {
+    background: white;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+#add-card-form input[type="text"] {
+    width: 45%;
+    padding: 10px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+}
+
+.filters {
+    margin: 20px 0;
+    display: flex;
+    gap: 10px;
+}
+
+#flashcards-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+}
+
+/* Flashcard 動畫設計 */
+.flashcard {
+    width: 300px;
+    height: 200px;
+    perspective: 1000px;
+    position: relative;
+}
+
+.flashcard-inner {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+    cursor: pointer;
+}
+
+.flashcard.flipped .flashcard-inner {
+    transform: rotateY(180deg);
+}
+
+.flashcard-front, .flashcard-back {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    backface-visibility: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.flashcard-front {
+    background-color: #ffffff;
+    color: #333;
+}
+
+.flashcard-back {
+    background-color: #4CAF50;
+    color: white;
+    transform: rotateY(180deg);
+}
+
+.delete-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: #f44336;
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    z-index: 10;
+}

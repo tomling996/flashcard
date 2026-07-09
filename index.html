@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anki-like Flashcard System</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Firebase SDKs -->
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js"></script>
+    <script type="module" src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js"></script>
+    <style>
+        /* 翻卡動畫 */
+        .flashcard-container { perspective: 1000px; }
+        .flashcard {
+            width: 100%; height: 300px;
+            position: relative;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+        .flashcard.flipped { transform: rotateY(180deg); }
+        .flashcard-side {
+            position: absolute; width: 100%; height: 100%;
+            backface-visibility: hidden;
+            display: flex; align-items: center; justify-content: center;
+            border: 1px solid #ccc; border-radius: 8px;
+            background: white; padding: 20px; text-align: center;
+        }
+        .flashcard-back { transform: rotateY(180deg); background: #f0f4f8; }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center p-4">
+
+    <div class="w-full max-w-3xl bg-white rounded-lg shadow-md p-6 mb-6">
+        <h1 class="text-2xl font-bold text-center text-gray-800 mb-4">📚 Anki 風格閃卡系統</h1>
+        
+        <!-- 登入/註冊區塊 -->
+        <div id="auth-section">
+            <div class="flex gap-4 mb-4 justify-center">
+                <button id="btn-login-tab" class="px-4 py-2 bg-blue-500 text-white rounded">登入</button>
+                <button id="btn-signup-tab" class="px-4 py-2 bg-gray-300 text-gray-700 rounded">註冊</button>
+            </div>
+            <input id="email" type="email" placeholder="Email" class="w-full p-2 mb-2 border rounded">
+            <input id="password" type="password" placeholder="Password" class="w-full p-2 mb-2 border rounded">
+            <div id="signup-extra" class="hidden">
+                <select id="role" class="w-full p-2 mb-2 border rounded">
+                    <option value="student">學生</option>
+                    <option value="teacher">老師</option>
+                </select>
+            </div>
+            <button id="btn-auth" class="w-full p-2 bg-blue-600 text-white rounded">登入</button>
+        </div>
+
+        <!-- 主應用區塊 (登入後顯示) -->
+        <div id="app-section" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <span id="user-info" class="text-gray-600"></span>
+                <button id="btn-logout" class="text-red-500 hover:underline">登出</button>
+            </div>
+
+            <!-- 建立牌組 -->
+            <div class="bg-gray-50 p-4 rounded mb-4">
+                <h2 class="font-bold mb-2">建立新牌組</h2>
+                <input id="deck-name" type="text" placeholder="牌組名稱 (例如: 英文單字)" class="w-full p-2 mb-2 border rounded">
+                <label class="flex items-center gap-2 mb-2">
+                    <input id="deck-public" type="checkbox"> 設為公開共享 (老師可勾選)
+                </label>
+                <button id="btn-create-deck" class="w-full p-2 bg-green-600 text-white rounded">建立牌組</button>
+            </div>
+
+            <!-- 牌組列表 -->
+            <h2 class="font-bold mb-2">我的牌組 / 共享牌組</h2>
+            <div id="deck-list" class="space-y-2 mb-6"></div>
+        </div>
+    </div>
+
+    <!-- 學習與編輯區塊 -->
+    <div id="study-section" class="hidden w-full max-w-3xl bg-white rounded-lg shadow-md p-6">
+        <button id="btn-back" class="mb-4 text-blue-500 hover:underline">&larr; 返回牌組列表</button>
+        <h2 id="study-title" class="text-xl font-bold text-center mb-4"></h2>
+
+        <!-- 新增卡片區 -->
+        <div class="bg-gray-50 p-4 rounded mb-4">
+            <h3 class="font-bold mb-2">新增卡片到此牌組</h3>
+            <input id="card-front" type="text" placeholder="正面 (問題)" class="w-full p-2 mb-2 border rounded">
+            <input id="card-back" type="text" placeholder="反面 (答案)" class="w-full p-2 mb-2 border rounded">
+            <button id="btn-add-card" class="w-full p-2 bg-indigo-600 text-white rounded">新增卡片</button>
+        </div>
+
+        <!-- 閃卡學習區 -->
+        <div class="flashcard-container mb-4">
+            <div id="flashcard" class="flashcard">
+                <div id="card-front-display" class="flashcard-side">點擊開始學習</div>
+                <div id="card-back-display" class="flashcard-side flashcard-back"></div>
+            </div>
+        </div>
+        
+        <div class="flex justify-between gap-4">
+            <button id="btn-prev" class="px-4 py-2 bg-gray-300 rounded">上一張</button>
+            <button id="btn-next" class="px-4 py-2 bg-gray-300 rounded">下一張</button>
+        </div>
+    </div>
+
+    <script type="module">
+        // 匯入 Firebase 模組
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, getDocs, addDoc, query, where, onSnapshot, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // ===== 請替換成你自己的 Firebase 配置 =====
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // 初始化 Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // DOM 元素
+        const authSection = document.getElementById('auth-section');
+        const appSection = document.getElementById('app-section');
+        const studySection = document.getElementById('study-section');
+        const btnLoginTab = document.getElementById('btn-login-tab');
+        const btnSignupTab = document.getElementById('btn-signup-tab');
+        const btnAuth = document.getElementById('btn-auth');
+        const btnLogout = document.getElementById('btn-logout');
+        const btnCreateDeck = document.getElementById('btn-create-deck');
+        const btnAddCard = document.getElementById('btn-add-card');
+        const btnBack = document.getElementById('btn-back');
+        const flashcard = document.getElementById('flashcard');
+
+        let isLoginMode = true;
+        let currentUserId = null;
+        let currentUserRole = null;
+        let currentDeckId = null;
+        let currentCards = [];
+        let currentCardIndex = 0;
+
+        // --- UI 切換邏輯 ---
+        btnLoginTab.addEventListener('click', () => {
+            isLoginMode = true;
+            document.getElementById('signup-extra').classList.add('hidden');
+            btnAuth.innerText = '登入';
+            btnLoginTab.classList.replace('bg-gray-300', 'bg-blue-500');
+            btnLoginTab.classList.replace('text-gray-700', 'text-white');
+            btnSignupTab.classList.replace('bg-blue-500', 'bg-gray-300');
+            btnSignupTab.classList.replace('text-white', 'text-gray-700');
+        });
+
+        btnSignupTab.addEventListener('click', () => {
+            isLoginMode = false;
+            document.getElementById('signup-extra').classList.remove('hidden');
+            btnAuth.innerText = '註冊';
+            btnSignupTab.classList.replace('bg-gray-300', 'bg-blue-500');
+            btnSignupTab.classList.replace('text-gray-700', 'text-white');
+            btnLoginTab.classList.replace('bg-blue-500', 'bg-gray-300');
+            btnLoginTab.classList.replace('text-white', 'text-gray-700');
+        });
+
+        // --- 認證邏輯 ---
+        btnAuth.addEventListener('click', async () => {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    const role = document.getElementById('role').value;
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    // 在 Firestore 建立使用者資料
+                    await setDoc(doc(db, "users", userCredential.user.uid), {
+                        email: email,
+                        role: role
+                    });
+                }
+            } catch (error) {
+                alert("錯誤: " + error.message);
+            }
+        });
+
+        btnLogout.addEventListener('click', () => signOut(auth));
+
+        // --- 監聽登入狀態 ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                // 獲取使用者角色
+                const userDocRef = doc(db, "users", user.uid);
+                const userDocSnap = await getDocs(query(collection(db, "users"), where("__name__", "==", user.uid))); // 簡易寫法，正式專案請用 getDoc
+                // 因全端環境限制，這裡假設已有 users collection
+                const q = query(collection(db, "users"));
+                const querySnapshot = await getDocs(q);
+                querySnapshot.forEach((doc) => {
+                    if(doc.id === user.uid) currentUserRole = doc.data().role;
+                });
+
+                authSection.classList.add('hidden');
+                appSection.classList.remove('hidden');
+                document.getElementById('user-info').innerText = `登入中: ${user.email} (${currentUserRole || 'student'})`;
+                loadDecks();
+            } else {
+                currentUserId = null;
+                currentUserRole = null;
+                authSection.classList.remove('hidden');
+                appSection.classList.add('hidden');
+                studySection.classList.add('hidden');
+            }
+        });
+
+        // --- 牌組邏輯 ---
+        btnCreateDeck.addEventListener('click', async () => {
+            const name = document.getElementById('deck-name').value;
+            const isPublic = document.getElementById('deck-public').checked;
+            if (!name) return alert("請輸入牌組名稱");
+
+            await addDoc(collection(db, "decks"), {
+                name: name,
+                ownerId: currentUserId,
+                isPublic: isPublic,
+                createdAt: new Date()
+            });
+            document.getElementById('deck-name').value = '';
+            document.getElementById('deck-public').checked = false;
+        });
+
+        async function loadDecks() {
+            const deckList = document.getElementById('deck-list');
+            deckList.innerHTML = '載入中...';
+            
+            // 讀取「我的牌組」或「公開牌組」
+            const q = query(collection(db, "decks"));
+            const querySnapshot = await getDocs(q);
+            
+            deckList.innerHTML = '';
+            querySnapshot.forEach((d) => {
+                const data = d.data();
+                // 顯示條件：是自己建的，或是公開的
+                if (data.ownerId === currentUserId || data.isPublic) {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 border rounded flex justify-between items-center hover:bg-gray-50 cursor-pointer';
+                    div.innerHTML = `
+                        <span>${data.name} ${data.isPublic ? '<span class="text-xs bg-blue-100 text-blue-600 p-1 rounded">共享</span>' : ''}</span>
+                        <button class="text-sm text-white bg-blue-500 px-3 py-1 rounded">進入學習</button>
+                    `;
+                    div.addEventListener('click', () => openStudyMode(d.id, data.name));
+                    deckList.appendChild(div);
+                }
+            });
+            if(deckList.innerHTML === '') deckList.innerHTML = '<p class="text-gray-500 text-sm">目前沒有牌組。</p>';
+        }
+
+        // --- 學習與卡片邏輯 ---
+        async function openStudyMode(deckId, deckName) {
+            currentDeckId = deckId;
+            document.getElementById('study-title').innerText = `學習：${deckName}`;
+            appSection.classList.add('hidden');
+            studySection.classList.remove('hidden');
+
+            // 載入卡片
+            const q = query(collection(db, "decks", deckId, "cards"));
+            const querySnapshot = await getDocs(q);
+            currentCards = [];
+            querySnapshot.forEach((d) => {
+                currentCards.push({ id: d.id, ...d.data() });
+            });
+
+            currentCardIndex = 0;
+            renderCard();
+        }
+
+        function renderCard() {
+            if (currentCards.length === 0) {
+                document.getElementById('card-front-display').innerText = "此牌組無卡片，請新增。";
+                document.getElementById('card-back-display').innerText = "";
+                return;
+            }
+            const card = currentCards[currentCardIndex];
+            document.getElementById('card-front-display').innerText = card.front;
+            document.getElementById('card-back-display').innerText = card.back;
+            flashcard.classList.remove('flipped'); // 重置翻卡
+        }
+
+        // 翻卡
+        flashcard.addEventListener('click', () => {
+            flashcard.classList.toggle('flipped');
+        });
+
+        // 上一張/下一張
+        document.getElementById('btn-prev').addEventListener('click', () => {
+            if (currentCardIndex > 0) {
+                currentCardIndex--;
+                renderCard();
+            }
+        });
+        document.getElementById('btn-next').addEventListener('click', () => {
+            if (currentCardIndex < currentCards.length - 1) {
+                currentCardIndex++;
+                renderCard();
+            }
+        });
+
+        // 新增卡片
+        btnAddCard.addEventListener('click', async () => {
+            const front = document.getElementById('card-front').value;
+            const back = document.getElementById('card-back').value;
+            if (!front || !back) return alert("請輸入正反面");
+
+            await addDoc(collection(db, "decks", currentDeckId, "cards"), {
+                front: front,
+                back: back,
+                createdAt: new Date()
+            });
+            
+            document.getElementById('card-front').value = '';
+            document.getElementById('card-back').value = '';
+            openStudyMode(currentDeckId, document.getElementById('study-title').innerText.replace('學習：', ''));
+        });
+
+        // 返回列表
+        btnBack.addEventListener('click', () => {
+            studySection.classList.add('hidden');
+            appSection.classList.remove('hidden');
+            loadDecks(); // 重新刷新列表
+        });
+
+    </script>
+</body>
+</html>
