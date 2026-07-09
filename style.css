@@ -1,116 +1,390 @@
+/* 全域與版面設計 */
+* {
+    box-sizing: border-box;
+}
+
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f4f7f6;
+    font-family: 'Segoe UI', "Microsoft JhengHei", Helvetica, Arial, sans-serif;
+    background-color: #f4f6f9;
     margin: 0;
-    padding: 20px;
+    padding: 0;
+    color: #333;
 }
 
 header {
+    background-color: #1a73e8;
+    color: white;
+    padding: 15px 30px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+.header-container {
+    max-width: 1200px;
+    margin: 0 auto;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #4CAF50;
-    color: white;
-    padding: 10px 20px;
-    border-radius: 8px;
 }
 
-button {
-    cursor: pointer;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 4px;
-    background-color: #fff;
-    color: #4CAF50;
-    font-weight: bold;
+header h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
 }
 
-button:hover { background-color: #e0e0e0; }
-.hidden { display: none !important; }
+#user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
 
-.controls {
+#user-name {
+    font-weight: 500;
+}
+
+/* 歡迎區塊 */
+.welcome-box {
+    max-width: 600px;
+    margin: 80px auto;
+    padding: 40px;
     background: white;
-    padding: 20px;
-    margin-top: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
 }
 
-#add-card-form input[type="text"] {
-    width: 45%;
+.welcome-box h2 {
+    color: #1a73e8;
+    margin-top: 0;
+}
+
+/* 按鈕基本樣式 */
+.btn {
+    cursor: pointer;
+    padding: 10px 18px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.btn-primary {
+    background-color: #1a73e8;
+    color: white;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background-color: #1557b0;
+}
+
+.btn-secondary {
+    background-color: #dadce0;
+    color: #3c4043;
+    width: 100%;
+    margin-top: 8px;
+}
+
+.btn-secondary:hover {
+    background-color: #bdc1c6;
+}
+
+.btn-light {
+    background-color: #ffffff;
+    color: #1a73e8;
+}
+
+.btn-light:hover {
+    background-color: #f8f9fa;
+}
+
+.btn-danger {
+    background-color: #d93025;
+    color: white;
+}
+
+.btn-danger:hover {
+    background-color: #b31412;
+}
+
+.hidden {
+    display: none !important;
+}
+
+/* 主要版面配置 */
+main {
+    max-width: 1200px;
+    margin: 30px auto;
+    padding: 0 20px;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 30px;
+}
+
+@media (max-width: 900px) {
+    .grid-container {
+        grid-template-columns: 1fr;
+    }
+}
+
+.card-box {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.card-box h2 {
+    margin-top: 0;
+    font-size: 18px;
+    margin-bottom: 20px;
+    color: #202124;
+    border-bottom: 2px solid #f1f3f4;
+    padding-bottom: 10px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+    font-size: 13px;
+    color: #5f6368;
+}
+
+textarea {
+    width: 100%;
     padding: 10px;
-    margin-right: 10px;
-    margin-bottom: 10px;
+    border: 1px solid #dadce0;
+    border-radius: 6px;
+    resize: vertical;
+    font-family: inherit;
+    font-size: 14px;
 }
 
-.filters {
+textarea:focus {
+    outline: none;
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
+}
+
+/* 切換按鈕樣式 (Toggle Switch) */
+.checkbox-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     margin: 20px 0;
+}
+
+.checkbox-label {
+    font-size: 13px;
+    color: #3c4043;
+    font-weight: 500;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 40px;
+    height: 22px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .3s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 16px;
+    width: 16px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+}
+
+input:checked + .slider {
+    background-color: #1a73e8;
+}
+
+input:checked + .slider:before {
+    transform: translateX(18px);
+}
+
+.slider.round {
+    border-radius: 34px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* 分頁切換頁籤 */
+.filters {
     display: flex;
     gap: 10px;
+    margin-bottom: 20px;
 }
 
-#flashcards-container {
-    display: flex;
-    flex-wrap: wrap;
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #5f6368;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.tab-btn:hover {
+    color: #1a73e8;
+}
+
+.tab-btn.active {
+    color: #1a73e8;
+    border-bottom: 3px solid #1a73e8;
+}
+
+/* 3D Anki 翻轉卡片系統 */
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 20px;
 }
 
-/* Flashcard 動畫設計 */
-.flashcard {
-    width: 300px;
-    height: 200px;
+.flashcard-wrapper {
     perspective: 1000px;
-    position: relative;
+    height: 220px;
 }
 
-.flashcard-inner {
+.flashcard {
+    position: relative;
     width: 100%;
     height: 100%;
+    text-align: center;
     transition: transform 0.6s;
     transform-style: preserve-3d;
     cursor: pointer;
 }
 
-.flashcard.flipped .flashcard-inner {
+/* 當有 flipped 類別時翻轉 180 度 */
+.flashcard.flipped {
     transform: rotateY(180deg);
 }
 
-.flashcard-front, .flashcard-back {
+.card-front, .card-back {
+    position: absolute;
     width: 100%;
     height: 100%;
-    position: absolute;
     backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    padding: 20px;
-    box-sizing: border-box;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-    text-align: center;
 }
 
-.flashcard-front {
+/* 正面樣式 */
+.card-front {
     background-color: #ffffff;
-    color: #333;
+    color: #202124;
+    border: 1px solid #dadce0;
 }
 
-.flashcard-back {
-    background-color: #4CAF50;
-    color: white;
+/* 背面樣式 */
+.card-back {
+    background-color: #e8f0fe;
+    color: #1a73e8;
     transform: rotateY(180deg);
+    border: 1px solid #aecbfa;
 }
 
-.delete-btn {
+/* 卡片內文字 */
+.card-content {
+    font-size: 18px;
+    font-weight: 500;
+    margin: auto 0;
+    word-break: break-word;
+    overflow-y: auto;
+    max-height: 120px;
+    width: 100%;
+}
+
+.card-hint {
+    font-size: 11px;
+    color: #80868b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* 卡片操作區（編輯/刪除） */
+.card-actions {
     position: absolute;
     top: 10px;
     right: 10px;
-    background-color: #f44336;
-    color: white;
-    border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    padding: 0;
-    z-index: 10;
+    display: flex;
+    gap: 5px;
+    z-index: 10; /* 確保在最上層，點擊時不觸發翻轉 */
+}
+
+.action-btn {
+    background: rgba(241, 243, 244, 0.9);
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    color: #5f6368;
+    transition: background 0.2s;
+}
+
+.action-btn:hover {
+    background: #dadce0;
+    color: #202124;
+}
+
+.delete-btn:hover {
+    background: #fad2cf;
+    color: #c5221f;
+}
+
+.author-badge {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    font-size: 11px;
+    background-color: #f1f3f4;
+    padding: 2px 8px;
+    border-radius: 10px;
+    color: #5f6368;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
